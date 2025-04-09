@@ -1,115 +1,114 @@
 #include <iostream>
 #include <string>
-#include <istream>
 #include <vector>
-#include <chrono>
-#include <typeinfo>
-#include <random>
-#include <algorithm>
-#include <numeric>
-#include <thread>
+#include <fstream>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
-
-
-class Book {
+class Tasks {
+private:
+    json data;
+    int lastID;
 public:
-    std::string barCode;
-
-	Book() : barCode("0000000000") {}
-    Book(std::string barCode) {
-        this->barCode = barCode;
+    Tasks() {
+        std::ifstream f("user_data.json");
+        data = json::parse(f);
+        lastID = data["lastID"].get<int>();
+        //std::cout << data["tasks"]["1"][1];
     }
-};
-
-class Member {
-public:
-	std::string name;
-	std::string id_card;
-
-	Member() : name("John Doe"), id_card("0000000000") {}
-    Member(std::string name, std::string id_card) {
-        this->name = name;
-        this->id_card = id_card;
+    ~Tasks() {
+        std::ofstream o("user_data.json");
+        o << data.dump(4);  // pretty-print with indent=4
+        o.close();
     }
-};
 
-class Loan {
-public:
-    using nowTime = std::chrono::system_clock::time_point;
-	Member member;
-    Book book;
-    nowTime start;
-	double hours;
-
-    Loan(Book book, Member member, double hours) {
-		this->start = std::chrono::system_clock::now();
-		this->member = member;
-        this->book = book;
-		this->hours = hours;
+    void add(std::string str) {
+        data["tasks"][std::to_string(++lastID)] = { str, "todo" };
+        data["lastID"] = lastID;
     }
-    double check() {
-        nowTime end = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed_seconds = end - this->start;
-		return (this->hours - (elapsed_seconds.count() / 3600)); //hours left
+
+    void remove(std::string str) {
+        data["tasks"].erase(str);
+        lastID--;
+        data["lastID"] = lastID;
     }
-};
 
-class Library {
-public:
-	std::vector<Book> books;
-	std::vector<Member> members;
-	std::vector<Loan> loans;
-
-	void addBook(Book book) {
-		books.push_back(book);
-	}
-	void addMember(Member member) {
-		members.push_back(member);
-	}
-	void loanBook(Book book, Member member, double hours) {
-		loans.push_back(Loan(book, member, hours));
-	}
-
-    void generteBooks() {
-        for (int i = 0; i < 100; i++) {
-            Book book(std::to_string(i));
-            this->addBook(book);
+    void order(int& argc, char* argv[]) {
+        std::cout << "BEGINING..." << std::endl;
+        if (argv[1] == "list") {
+            if (argc == 2) {
+                for (int i = 1; i <= lastID; i++) {
+                    
+                    std::cout << i << " : " 
+                        << data["tasks"][std::to_string(i)][0].get<std::string>()
+                        << " : " << data["tasks"][std::to_string(i)][1].get<std::string>();
+                }
+            }
+            else if (argv[2] == "todo") {
+                for (int i = 1; i <= lastID; i++) {
+                    if (data["tasks"][std::to_string(i)][1] == "todo") {
+                        std::cout << "el: " << data["tasks"][std::to_string(i)][0].get<std::string>()
+                            << ": " << data["tasks"][std::to_string(i)][1].get<std::string>();
+                    }
+                }
+            }
+            else if (argv[2] == "in-progress") {
+                for (int i = 1; i <= lastID; i++) {
+                    if (data["tasks"][std::to_string(i)][1] == "in-progress") {
+                        std::cout << "el: " << data["tasks"][std::to_string(i)][0].get<std::string>()
+                            << ": " << data["tasks"][std::to_string(i)][1].get<std::string>();
+                    }
+                }
+            }
+            else if (argv[2] == "done") {
+                for (int i = 1; i <= lastID; i++) {
+                    if (data["tasks"][std::to_string(i)][1] == "done") {
+                        std::cout << "el: " << data["tasks"][std::to_string(i)][0].get<std::string>()
+                            << ": " << data["tasks"][std::to_string(i)][1].get<std::string>();
+                    }
+                }
+            }
+            
+        }
+        else if (argv[1] == "add") {
+            add(argv[2]);
+        }
+        else if (argv[1] == "delete") {
+            remove(argv[2]);
+        }
+        else if (argv[1] == "update") {
+            std::string index(argv[2]);
+            std::string content(argv[3]);
+            data["tasks"][index][0] = content;
+        }
+        else if (argv[1] == "mark-todo") {
+            std::string index(argv[2]);
+            data["tasks"][index][1] = "todo";
+        }
+        else if (argv[1] == "mark-in-progress") {
+            std::string index(argv[2]);
+            data["tasks"][index][1] = "in-progress";
+        }
+        else if (argv[1] == "mark-done") {
+            std::string index(argv[2]);
+            data["tasks"][index][1] = "done";
         }
     }
-    void generateMembers() {
-        for (int i = 0; i < 10; i++) {
-            Member member("Johny Depp", std::to_string(i));
-            this->addMember(member);
-        }
-    }
-
-	void generateLoans() {
-		for (int i = 0; i < 10; i++) {
-			this->loanBook(books[i], members[i], 10);
-		}
-	}
-
-    void genAll() {
-		this->generteBooks();
-		this->generateMembers();
-		this->generateLoans();
-    }
-    void print() {
-		std::cout << std::to_string(this->loans[0].check()) << std::endl;
-    }
 };
 
-
-int main()
+int main(int argc, char* argv[])
 {
-    /*std::string name;
-    std::getline(std::cin >> std::ws, name);
-    std::string_view name2(name);
-    std::cout << (name2.remove_suffix(1), name2.remove_prefix(1), name2);*/
-	Library library;
-	library.genAll();
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-	library.print();
+    Tasks obj;
+    argv[1] = const_cast<char*>("add");
+    argv[2] = const_cast<char*>("groceries");
+    
+    //argv[1] = const_cast<char*>("list");
+    //argc--;
+
+    //argv[1] = const_cast<char*>("delete");
+    //argv[2] = const_cast<char*>("1");
+    //std::cout << "what a fuck" << std::endl;
+    obj.order(argc, argv);
     
     return 0;
 }
