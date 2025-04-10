@@ -29,17 +29,15 @@ public:
 
     void remove(std::string str) {
         data["tasks"].erase(str);
-        lastID--;
-        data["lastID"] = lastID;
     }
 
     void order(int& argc, char* argv[]) {
-        std::cout << "BEGINING..." << std::endl;
+        //std::cout << "BEGINING..." << std::endl;
         if (static_cast<std::string>(argv[1]) == "list") {
-            std::cout << "there" << std::endl;
+            //std::cout << "there" << std::endl;
             if (argc == 2) {
                 for (int i = 1; i <= lastID; i++) {
-                    
+                    if (!data["tasks"].contains(std::to_string(i))) continue;
                     std::cout << i << " : "
                         << data["tasks"][std::to_string(i)][0].get<std::string>()
                         << " : " << data["tasks"][std::to_string(i)][1].get<std::string>() << std::endl;
@@ -47,6 +45,8 @@ public:
             }
             else if (static_cast<std::string>(argv[2]) == "todo") {
                 for (int i = 1; i <= lastID; i++) {
+                    if (!data["tasks"].contains(std::to_string(i))) continue;
+
                     if (data["tasks"][std::to_string(i)][1] == "todo") {
                         std::cout << "el: " << data["tasks"][std::to_string(i)][0].get<std::string>()
                             << ": " << data["tasks"][std::to_string(i)][1].get<std::string>();
@@ -55,6 +55,8 @@ public:
             }
             else if (static_cast<std::string>(argv[2]) == "in-progress") {
                 for (int i = 1; i <= lastID; i++) {
+                    if (!data["tasks"].contains(std::to_string(i))) continue;
+
                     if (data["tasks"][std::to_string(i)][1] == "in-progress") {
                         std::cout << "el: " << data["tasks"][std::to_string(i)][0].get<std::string>()
                             << ": " << data["tasks"][std::to_string(i)][1].get<std::string>();
@@ -63,6 +65,8 @@ public:
             }
             else if (static_cast<std::string>(argv[2]) == "done") {
                 for (int i = 1; i <= lastID; i++) {
+                    if (!data["tasks"].contains(std::to_string(i))) continue;
+
                     if (data["tasks"][std::to_string(i)][1] == "done") {
                         std::cout << "el: " << data["tasks"][std::to_string(i)][0].get<std::string>()
                             << ": " << data["tasks"][std::to_string(i)][1].get<std::string>();
@@ -76,7 +80,6 @@ public:
         }
         else if (static_cast<std::string>(argv[1]) == "delete") {
             remove(static_cast<std::string>(argv[2]));
-
         }
         else if (static_cast<std::string>(argv[1]) == "update") {
             std::string index(argv[2]);
@@ -99,7 +102,10 @@ public:
     }
     void test() {
         //data["tasks"] = std::move(data["newtasks"]);
-        data.erase("newtasks");
+        //data.erase("newtasks");
+        //for (auto& el : data["tasks"]) {
+        //    std::cout << el;
+        //}
     }
 };
 
